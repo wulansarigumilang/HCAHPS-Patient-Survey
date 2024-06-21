@@ -1,0 +1,55 @@
+import pandas as pd
+import pyodbc
+from sqlalchemy import create_engine
+import os
+
+# create connection to SQL Server
+username = 'xxxxxx'
+password = 'xxxxxxxx'
+server = 'xxxx\xxxx'
+database = 'patientsurvey'
+driver = 'ODBC Driver 17 for SQL Server'
+
+# create URL odbc connection to SQL Server
+connection_string = f'mssql+pyodbc://{username}:{password}@{server}/{database}?driver={driver}'
+
+# create SQLAlchemy engine
+engine = create_engine(connection_string)
+
+print('Success')
+
+# try:
+#     conn = pyodbc.connect(
+#         f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+#     )
+#     print("Connected!")
+
+# except Exception as e:
+#     print(f"ERROR!: {str(e)}")
+    
+# engine = create_engine(conn)
+
+# # finally:
+# #     if 'conn' in locals():
+# #         conn.close()
+
+folder_path = r'C:\Users\xxxx\Downloads\HCAHPS+Patient+Survey\data_tables'
+
+# Loop through each file in the folder
+for filename in os.listdir(folder_path):
+    if filename.endswith('.csv'):
+        file_path = os.path.join(folder_path, filename)  # Combine folder_path with filename
+        df = pd.read_csv(file_path)  # Read CSV file into Pandas DataFrame
+        table_name = os.path.splitext(filename)[0]  # Extract filename without extension
+        
+        print(f'Reading file {filename}...')
+        
+        # Try to save DataFrame to SQL Server
+        try:
+            df.to_sql(table_name, con=engine, index=False, if_exists='fail')  # 'fail' to fail if table already exists
+            print(f'File {filename} successfully inserted into table {table_name}')
+        except ValueError as e:
+            if str(e).startswith('Table') and str(e).endswith('already exists.'):
+                print(f'Table {table_name} already exists')
+            else:
+                print(f'Failed to save file {filename} to table {table_name}: {str(e)}')
