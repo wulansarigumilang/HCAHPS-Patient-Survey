@@ -42,8 +42,13 @@ for filename in os.listdir(folder_path):
     if filename.endswith('.csv'):
         file_path = os.path.join(folder_path, filename)  # Combine folder_path with filename
         df = pd.read_csv(file_path)  # Read CSV file into Pandas DataFrame
-        table_name = os.path.splitext(filename)[0]  # Extract filename without extension
         
+        # Adjust column names to be lower case and remove spaces
+        df.columns = [col.lower().replace(' ', '_') for col in df.columns]
+        
+        table_name = os.path.splitext(filename)[0]  # Extract filename without extension
+        table_name = table_name.lower().replace(' ', '_')  # Make table name consistent
+
         print(f'Reading file {filename}...')
         
         # Try to save DataFrame to SQL Server
@@ -52,6 +57,6 @@ for filename in os.listdir(folder_path):
             print(f'File {filename} successfully inserted into table {table_name}')
         except ValueError as e:
             if str(e).startswith('Table') and str(e).endswith('already exists.'):
-                print(f'Table {table_name} already exists')
+                print(f'Table {table_name} already exists, skipping file {filename}.')
             else:
                 print(f'Failed to save file {filename} to table {table_name}: {str(e)}')
